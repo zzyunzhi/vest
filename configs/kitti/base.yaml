@@ -1,0 +1,4 @@
+message:
+  kitti_base
+config_base:
+  configs/mpi_aff_cpu_in_disp_in_flow_out_no_color/no_gan_loss_l1_very_large_stereo_forward_l1_t_very_large_perc_large_annealing_lr_depth_1_1000.yaml

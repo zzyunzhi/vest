@@ -1,0 +1,10 @@
+message: "gan + flow annealing"
+config_base: "configs/mpi_aff_cpu_in_disp_in_flow_out_no_color/no_gan_loss_l1_very_large_stereo_forward_l1_t_very_large_annealing_lr.yaml"
+
+gen:
+  embed:
+    front_depth: 1
+    back_depth: 1000
+trainer:
+  custom_loss_weight:
+    stereo_forward_perc_mpi_inv_disp: 100.0

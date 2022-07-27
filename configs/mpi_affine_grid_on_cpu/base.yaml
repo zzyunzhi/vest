@@ -1,0 +1,188 @@
+message: "gan + small mono, color blend"
+
+batch_size_fraction: 1
+
+image_save_iter: 1 #200
+logging_iter: 1 #200
+
+snapshot_save_epoch: 1 #9999999
+snapshot_save_iter: 1 #9999999
+
+max_epoch: 99999
+max_iter: 20000
+
+# others
+single_frame_epoch: 0
+num_epochs_temporal_step: 20
+checkpoint: ""
+config_base: ""
+
+gen:
+  type: vest.generators.mpi_flow_v2
+  embed:
+    type: vest.flows.mpi_single_view_net_flow_unet_color_blend_v2
+    n_plane: 16
+    # mpi_net
+    num_downsamples: 6
+    input_disparity: False
+    input_flow: False
+    input_norm_flow: False
+    input_eulerian: False
+    use_affine_motion: True
+    # conv blocks
+    activation_norm_type: instance
+    weight_norm_type: spectral
+    kernel_size: 3
+    # plane expansion
+    plane_input_disparity: False
+    plane_input_flow: False
+    plane_input_norm_flow: False
+    plane_input_eulerian: False
+    # predict colors
+    output_no_color: False
+    output_residual_color: False
+    # predict affine flow parameters
+    theta_output_multiplier: 1 # 0.02 # this is dataset specific
+    normalize_theta_weight: False
+    # warping operation
+    affine_grid_on_cpu: True
+    grid_sample_on_cpu: False
+    front_depth: 1
+    back_depth: 10
+  use_flow_net: False
+  use_pwc_net: False
+  use_eulerian_motion: False
+  use_midas: False
+  use_mono: True
+  use_monodepth2: False
+  no_flow_confidence: False
+  flow_confidence_threshold: 0.02
+
+trainer:
+  loss_weight:
+    gan: 1.0
+    feature_matching: 10.0
+    temporal_gan: 0.0
+    perceptual: 10.0
+    flow: 0
+    L1: 0.0
+  custom_loss_weight:
+    # supervised flow loss
+    flow_l1: 0.0
+    # supervised depth loss
+    disp_mse_mono: 10.0
+    disp_reg_mono: 0.0
+    disp_mse_mono_next: 0.0
+    disp_reg_mono_next: 0.0
+    disp_mse_mono_ssi: 0.0
+    disp_reg_mono_ssi: 0.0
+    # reconstruction
+    recon_prev_image_l1: 0.0
+    recon_prev_image_l2: 0.0
+    # disparity regularization
+    depth_smoothness: 0.0
+    depth_smoothness_v2: 0.0
+    transmittance_smoothness: 0.0
+    edge_aware_v2: 0.0
+    # alpha regularization
+    alpha_l1: 0.0
+    alpha_l0: 0.0
+    alpha_entropy: 0.0
+    # monitor
+    theta_similarity: 0.0
+    theta_shift: 0.0
+    flow_fro_norm: 0.0
+    flow_gt_fro_norm: 0.0
+    flow_layers_fro_norm: 0.0
+    total_variation: 0.0
+    layer_total_variation: 0.0
+    # view synthesis metrics projecting from main view to stereo view
+    eval_ssim_syn_forward_stereo_view_mpi_inv_disp: 0.0
+    eval_pnsr_syn_forward_stereo_view_mpi_inv_disp: 0.0
+    eval_lpips_vgg_syn_forward_stereo_view_mpi_inv_disp: 0.0
+    eval_lpips_alex_syn_forward_stereo_view_mpi_inv_disp: 0.0
+    eval_lpips_vgg_videoautoencoder_syn_forward_stereo_view_mpi_inv_disp: 0.0
+    # single-frame prediction metrics
+    eval_ssim_pred_from_flownet: 0.0
+    eval_ssim_pred_from_mpi: 0.0
+    eval_pnsr_pred_from_flownet: 0.0
+    eval_pnsr_pred_from_mpi: 0.0
+    eval_ssim_cropped_pred_from_mpi: 0.0
+    eval_pnsr_cropped_pred_from_mpi: 0.0
+    eval_ssim_kitti_ldi_pred_from_mpi: 0.0
+    eval_pnsr_kitti_ldi_pred_from_mpi: 0.0
+    eval_lpips_vgg_pred_from_mpi: 0.0
+    eval_lpips_alex_pred_from_mpi: 0.0
+    # view synthesis metrics when stereo image is available
+    eval_ssim_syn_from_depthnet: 0.0
+    eval_ssim_syn_from_mpi: 0.0
+    eval_ssim_syn_from_pred_depth: 0.0
+    eval_ssim_syn_from_pred_depth_match_median: 0.0
+    eval_ssim_syn_from_pred_depth_gt_adjusted: 0.0
+    eval_ssim_syn_from_pred_depth_gt_adjusted_ssi: 0.0
+    eval_pnsr_syn_from_depthnet: 0.0
+    eval_pnsr_syn_from_mpi: 0.0
+    eval_pnsr_syn_from_pred_depth: 0.0
+    eval_pnsr_syn_from_pred_depth_match_median: 0.0
+    eval_pnsr_syn_from_pred_depth_gt_adjusted: 0.0
+    eval_pnsr_syn_from_pred_depth_gt_adjusted_ssi: 0.0
+
+  type: vest.trainers.mpi
+  amp: O1
+  model_average: False
+#  model_average_beta: 0.999
+#  model_average_start_iteration: 500
+#  model_average_batch_norm_estimation_iteration: 0
+  num_videos_to_test: 64
+  num_frames_per_video: 10
+  num_videos_to_visualize: 1 #4
+  inference_sequence_length: -1
+
+  gan_mode: hinge
+  gan_relativistic: False
+  perceptual_loss:
+    mode: 'vgg19'
+    layers: ['relu_1_1', 'relu_2_1', 'relu_3_1', 'relu_4_1', 'relu_5_1']
+    weights: [0.03125, 0.0625, 0.125, 0.25, 1.0]
+    num_scales: 3
+  init:
+    type: xavier
+    gain: 0.02
+
+dis:
+  type: vest.discriminators.video_pred
+  image:
+    num_filters: 64
+    max_num_filters: 512
+    num_discriminators: 2
+    num_layers: 3
+    weight_norm_type: none
+    activation_norm_type: instance
+flow_network:
+  type: vest.third_party.flow_net.flow_net
+
+# Inference options.
+pretrained_weight: 1b2M5rU740vBurLQ9iDP2kb4sP5HAb-Jx
+
+# optimization option
+gen_opt:
+  type: adam
+  lr: 0.0002
+  adam_beta1: 0.5
+  adam_beta2: 0.999
+  lr_policy:
+    iteration_mode: False
+    type: step
+    step_size: 60
+    gamma: 0.1
+dis_opt:
+  type: adam
+  lr: 0.0002
+  adam_beta1: 0.5
+  adam_beta2: 0.999
+  lr_policy:
+    iteration_mode: False
+    type: step
+    step_size: 60
+    gamma: 0.1
+

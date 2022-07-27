@@ -1,0 +1,49 @@
+message: "gan + mono + flow, input disparity, input flow, output no color"
+config_base: "configs/mpi_affine_grid_on_cpu/base.yaml"
+
+gen:
+  embed:
+    # mpi_net
+    input_disparity: True
+    input_flow: True
+    input_norm_flow: False
+    input_eulerian: False
+    # plane expansion
+    plane_input_disparity: False
+    plane_input_flow: False
+    plane_input_norm_flow: False
+    plane_input_eulerian: False
+    # predict colors
+    output_no_color: True
+    output_residual_color: False
+  use_flow_net: True
+  use_pwc_net: False
+  use_eulerian_motion: False
+  use_mono: True
+  use_stereo: False
+  use_stereo_detached: False
+  use_stereo_forward: False
+  use_stereo_ssi: False
+  use_pts_transformer: False
+  use_disp_scale: False
+  use_disp_scale_detached: False
+  no_flow_confidence: False
+  flow_confidence_threshold: 0.02
+
+trainer:
+  loss_weight:
+    gan: 1.0
+    feature_matching: 10.0
+    perceptual: 10.0
+  custom_loss_weight:
+    # supervised flow loss
+    flow_l1: 100.0
+    # supervised depth loss
+    disp_mse_mono: 100.0
+    disp_mse_mono_next: 0.0
+    disp_mse_mono_ssi: 0.0
+    # alpha regularization
+    alpha_entropy: 0.0
+  loss_weight_schedule:
+    disp_mse_mono: none
+  num_videos_to_visualize: 4

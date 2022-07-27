@@ -1,0 +1,51 @@
+message: "gan + flow annealing"
+config_base: "default"
+
+gen:
+  embed:
+    input_disparity: False
+    input_flow: False
+    use_gradient_checkpoint: False
+  use_mono: False
+  use_monodepth2: False
+  use_flow_net: False
+  use_stereo_forward: True
+  use_disp_scale: False
+dis:
+  type: vest.discriminators.dummy
+trainer:
+  type: vest.trainers.mpi_no_recurr_no_gan
+  grad_acc_iter: 1
+  distributed_data_parallel:
+    ddp_default
+  loss_weight:
+    gan: 0.0
+    feature_matching: 0.0
+    L1: 1000.0
+  custom_loss_weight:
+    flow_l1: 0.0
+    disp_mse_mono: 0.0
+    # viw synthesis loss
+    stereo_forward_l1_t: 1000.0
+    stereo_forward_ssim_t: 0.0
+    stereo_forward_reprojection_t: 0.0
+    stereo_forward_l1_tp1: 0.0
+    stereo_forward_ssim_tp1: 0.0
+    stereo_forward_reprojection_tp1: 0.0
+    stereo_forward_reprojection_mpi_inv_disp: 0.0
+    stereo_forward_perc_mpi_inv_disp: 0.0
+    # eval, no gradient
+    eval_ssim_syn_forward_stereo_view_mpi_inv_disp: 0.0
+    eval_pnsr_syn_forward_stereo_view_mpi_inv_disp: 0.0
+    eval_lpips_vgg_syn_forward_stereo_view_mpi_inv_disp: 0.0
+    eval_lpips_alex_syn_forward_stereo_view_mpi_inv_disp: 0.0
+gen_opt:
+  type: adam
+  lr: 0.0002
+  adam_beta1: 0.5
+  adam_beta2: 0.999
+  lr_policy:
+    iteration_mode: False
+    type: step
+    step_size: 5
+    gamma: 0.8

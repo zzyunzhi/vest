@@ -1,0 +1,43 @@
+message: "KITTI city raw, LDI dataset intrinsics, with augmentation, 256 x 768"
+config_base: ""
+
+data:
+  name: kitti_city
+  type: vest.datasets.kitti_ldi
+  img_size: [256, 768]
+  num_frames_G: 3
+  num_frames_D: 0
+
+  num_workers: 2
+  input_types:
+    - images:
+        num_channels: 3
+        normalize: True
+
+  input_image:
+    - images
+
+  train:
+    split: train
+    batch_size: 1
+    initial_sequence_length: 3
+    max_sequence_length: 3
+
+  val:
+    split: val
+    batch_size: 1
+
+  generator_params:
+    dataset_variant: raw_city
+    use_stereo: True
+    use_monodepth2_calibration: False
+    do_flip_p: 0.5
+    do_color_aug_p: 1
+    interpolation: BICUBIC
+    use_zero_tm1: False
+
+test_data:
+  type: vest.datasets.kitti_ldi
+  test:
+    split: test
+    batch_size: 1
